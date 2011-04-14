@@ -1,5 +1,5 @@
-# Cookbook Name:: app_php
-# Recipe:: default
+# Cookbook Name:: db_mysql
+# Recipe:: setup_apache_vhost
 #
 # Copyright (c) 2011 RightScale Inc
 #
@@ -22,12 +22,31 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-# == Install user-specified Packages and Modules
-#
-[ node[:php][:package_dependencies] | node[:php][:modules_list] ].flatten.each do |p|
-  package p
+service "apache2" do
+  action :nothing
 end
 
-node[:php][:module_dependencies].each do |mod|
-  apache_module mod
+# == Setup PHP Apache vhost on port 80
+#
+php_port = "80"
+
+# disable default vhost
+apache_site "000-default" do
+  enable false
+end
+
+template "#{node[:apache][:dir]}/ports.conf" do
+  cookbook "apache2"
+  source "ports.conf.erb"
+  variables :apache_listen_ports => php_port
+  notifies :restart, resources(:service => "apache2")
+end
+
+# == Configure apache vhost for PHP
+#
+web_app node[:php][:application_name] do
+  template "apache.conf.erb"
+  docroot node[:php][:code][:destination]
+  vhost_port php_port
+  server_name node[:php][:server_name]
 end

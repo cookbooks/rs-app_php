@@ -1,7 +1,7 @@
-# Cookbook Name:: app_php
-# Recipe:: do_db_restore
+# Cookbook Name:: db_mysql
+# Recipe:: setup_db_connection
 #
-# Copyright (c) 2009 RightScale Inc
+# Copyright (c) 2011 RightScale Inc
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -22,18 +22,22 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
-# restore application database schema from remote location
-db_mysql_restore "do database restore" do
-  url @node[:php][:code][:url]
-  branch @node[:php][:code][:branch] 
-  credentials @node[:php][:code][:credentials]
-  file_path @node[:php][:db_mysqldump_file_path]
-  schema_name @node[:php][:db_schema_name]
+# == Setup PHP Database Connection
+#
+# Make sure config dir exists
+directory File.join(node[:php][:code][:destination], "config") do
+  recursive true 
+  owner node[:php][:app_user]
+  group node[:php][:app_user]
 end
 
-db_mysql_set_privileges "setup user privileges" do
-  preset 'user'
-  username @node[:php][:db_app_user]
-  password @node[:php][:db_app_passwd]
+# Tell MySQL to fill in our connection template
+db_mysql_connect_app File.join(node[:php][:code][:destination], "config", "db.php") do
+  template "db.php.erb"
+  cookbook "app_php"
+  database node[:php][:db_schema_name]
+  owner node[:php][:app_user]
+  group node[:php][:app_user]
 end
+
+
