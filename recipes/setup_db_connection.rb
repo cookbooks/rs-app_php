@@ -38,6 +38,7 @@ db_mysql_connect_app File.join(node[:php][:code][:destination], "config", "db.ph
   database node[:php][:db_schema_name]
   owner node[:php][:app_user]
   group node[:php][:app_user]
+  mysql_version "5.0"
 end
 
 
